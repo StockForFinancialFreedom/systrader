@@ -1,5 +1,6 @@
-from flask import Flask, escape, request, jsonify
+from flask import Flask, request, jsonify
 from creon import Creon
+import constants
 
 
 app = Flask(__name__)
@@ -19,15 +20,6 @@ def handle_connect():
         _pwd = data['pwd']
         _pwdcert = data['pwdcert']
         return jsonify(c.connect(_id, _pwd, _pwdcert))
-    elif request.method == 'PUT':
-        # reconnect
-        c.disconnect()
-        c.kill_client()
-        data = request.get_json()
-        _id = data['id']
-        _pwd = data['pwd']
-        _pwdcert = data['pwdcert']
-        return jsonify(c.connect(_id, _pwd, _pwdcert))
     elif request.method == 'DELETE':
         # disconnect
         res = c.disconnect()
@@ -41,11 +33,11 @@ def handle_stockcodes():
     c.avoid_reqlimitwarning()
     market = request.args.get('market')
     if market == 'kospi':
-        return c.get_stockcodes(1)
+        return jsonify(c.get_stockcodes(constants.MARKET_CODE_KOSPI))
     elif market == 'kosdaq':
-        return c.get_stockcodes(2)
+        return jsonify(c.get_stockcodes(constants.MARKET_CODE_KOSDAQ))
     else:
-        return '', 400
+        return '"market" should be one of "kospi" and "kosdaq".', 400
 
 
 @app.route('/stockstatus', methods=['GET'])
@@ -68,7 +60,7 @@ def handle_stockcandles():
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
     if not (n or date_from):
-        return '', 400
+        return 'Need to provide "n" or "date_from" argument.', 400
     stockcandles = c.get_chart(stockcode, target='A', unit='D', n=n, date_from=date_from, date_to=date_to)
     return jsonify(stockcandles)
 
